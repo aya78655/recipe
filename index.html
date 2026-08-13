@@ -305,6 +305,41 @@
     background: #fff; color: var(--ink); outline: none;
   }
   .field textarea { min-height: 72px; resize: vertical; }
+  .thumb-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed #c2bda8;
+    background: #fff;
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .thumb-preview {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+  }
+  .thumb-clear-btn {
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
   .form-error { color: var(--danger); font-size: 13px; margin: 0; }
   .submit-btn {
     margin-top: 4px; background: var(--ink); color: var(--bg); border: none;
@@ -400,8 +435,17 @@
         <input type="text" id="formUrl" placeholder="https://www.instagram.com/p/...">
       </label>
       <label class="field">
-        サムネイル画像URL（任意）
-        <input type="text" id="formThumb" placeholder="https://...jpg（画像を右クリック→「画像アドレスをコピー」）">
+        サムネイル画像
+        <div class="thumb-input-row">
+          <label class="upload-btn" for="formThumbFile">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            スクショをアップロード
+          </label>
+          <input type="file" id="formThumbFile" accept="image/*" style="display:none;">
+          <img id="formThumbPreview" class="thumb-preview" style="display:none;" alt="" onerror="this.style.display='none'">
+          <button type="button" id="formThumbClear" class="thumb-clear-btn" style="display:none;">削除</button>
+        </div>
+        <input type="text" id="formThumb" placeholder="または画像URLを貼り付け（https://...jpg）">
       </label>
       <label class="field">
         メモ（任意）
@@ -460,8 +504,17 @@
             <input type="text" id="editUrl">
           </label>
           <label class="field">
-            サムネイル画像URL（任意）
-            <input type="text" id="editThumb" placeholder="https://...jpg">
+            サムネイル画像
+            <div class="thumb-input-row">
+              <label class="upload-btn" for="editThumbFile">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                スクショをアップロード
+              </label>
+              <input type="file" id="editThumbFile" accept="image/*" style="display:none;">
+              <img id="editThumbPreview" class="thumb-preview" style="display:none;" alt="" onerror="this.style.display='none'">
+              <button type="button" id="editThumbClear" class="thumb-clear-btn" style="display:none;">削除</button>
+            </div>
+            <input type="text" id="editThumb" placeholder="または画像URLを貼り付け（https://...jpg）">
           </label>
           <label class="field">
             メモ（任意）
@@ -504,6 +557,104 @@ let query = "";
 let activeCat = "すべて";
 let view = "grid";
 let selectedId = null;
+let formThumbData = null;
+let editThumbData = null;
+
+const MAX_THUMB_DIM = 900;
+const THUMB_QUALITY = 0.82;
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("読み込みに失敗しました"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > MAX_THUMB_DIM || height > MAX_THUMB_DIM) {
+          const scale = MAX_THUMB_DIM / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", THUMB_QUALITY));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setupThumbUploader({ fileInputId, urlInputId, previewId, clearBtnId, getSet }) {
+  const fileInput = document.getElementById(fileInputId);
+  const urlInput = document.getElementById(urlInputId);
+  const preview = document.getElementById(previewId);
+  const clearBtn = document.getElementById(clearBtnId);
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await compressImage(file);
+      getSet.set(dataUrl);
+      preview.src = dataUrl;
+      preview.style.display = "block";
+      clearBtn.style.display = "inline-block";
+      urlInput.value = "";
+    } catch (err) {
+      alert("画像の読み込みに失敗しました。別の画像でお試しください。");
+    } finally {
+      fileInput.value = "";
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    getSet.set(null);
+    urlInput.value = "";
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    clearBtn.style.display = "none";
+    fileInput.value = "";
+  });
+
+  urlInput.addEventListener("input", () => {
+    if (urlInput.value.trim() && getSet.get()) {
+      getSet.set(null);
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+      clearBtn.style.display = "none";
+    }
+  });
+}
+
+function resetThumbUploaderUI({ urlInputId, previewId, clearBtnId }, value) {
+  const urlInput = document.getElementById(urlInputId);
+  const preview = document.getElementById(previewId);
+  const clearBtn = document.getElementById(clearBtnId);
+
+  if (value && value.startsWith("data:")) {
+    preview.src = value;
+    preview.style.display = "block";
+    clearBtn.style.display = "inline-block";
+    urlInput.value = "";
+  } else {
+    urlInput.value = value || "";
+    if (value) {
+      preview.src = value;
+      preview.style.display = "block";
+      clearBtn.style.display = "inline-block";
+    } else {
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+      clearBtn.style.display = "none";
+    }
+  }
+}
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
@@ -669,6 +820,8 @@ function renderAll() {
 function openForm() {
   document.getElementById("formError").style.display = "none";
   document.getElementById("entryForm").reset();
+  formThumbData = null;
+  resetThumbUploaderUI({ urlInputId: "formThumb", previewId: "formThumbPreview", clearBtnId: "formThumbClear" }, null);
   renderCatSelect();
   document.getElementById("formOverlay").classList.add("open");
   document.getElementById("formUrl").focus();
@@ -730,7 +883,8 @@ function showDetailEditMode() {
   if (!entry) return;
   document.getElementById("editError").style.display = "none";
   document.getElementById("editUrl").value = entry.url || "";
-  document.getElementById("editThumb").value = entry.thumbnail || "";
+  editThumbData = (entry.thumbnail && entry.thumbnail.startsWith("data:")) ? entry.thumbnail : null;
+  resetThumbUploaderUI({ urlInputId: "editThumb", previewId: "editThumbPreview", clearBtnId: "editThumbClear" }, entry.thumbnail || null);
   document.getElementById("editNote").value = entry.note || "";
   renderCatSelect(document.getElementById("editCat"), entry.category);
   document.getElementById("editNewCat").value = "";
@@ -787,8 +941,8 @@ document.getElementById("editForm").addEventListener("submit", (e) => {
     return;
   }
 
-  let thumbnail = document.getElementById("editThumb").value.trim();
-  if (thumbnail && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
+  let thumbnail = editThumbData || document.getElementById("editThumb").value.trim();
+  if (thumbnail && !thumbnail.startsWith("data:") && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
 
   const note = document.getElementById("editNote").value.trim();
   const formCat = document.getElementById("editCat").value;
@@ -831,8 +985,8 @@ document.getElementById("entryForm").addEventListener("submit", (e) => {
   const formCat = document.getElementById("formCat").value;
   const newCat = document.getElementById("formNewCat").value.trim();
   const finalCat = newCat || formCat;
-  let thumbnail = document.getElementById("formThumb").value.trim();
-  if (thumbnail && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
+  let thumbnail = formThumbData || document.getElementById("formThumb").value.trim();
+  if (thumbnail && !thumbnail.startsWith("data:") && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
 
   const entry = {
     id: `entry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -875,6 +1029,21 @@ document.getElementById("listViewBtn").addEventListener("click", () => {
   document.getElementById("listViewBtn").classList.add("active");
   document.getElementById("gridViewBtn").classList.remove("active");
   renderMain();
+});
+
+setupThumbUploader({
+  fileInputId: "formThumbFile",
+  urlInputId: "formThumb",
+  previewId: "formThumbPreview",
+  clearBtnId: "formThumbClear",
+  getSet: { get: () => formThumbData, set: (v) => { formThumbData = v; } },
+});
+setupThumbUploader({
+  fileInputId: "editThumbFile",
+  urlInputId: "editThumb",
+  previewId: "editThumbPreview",
+  clearBtnId: "editThumbClear",
+  getSet: { get: () => editThumbData, set: (v) => { editThumbData = v; } },
 });
 
 renderAll();
