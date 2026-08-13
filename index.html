@@ -353,7 +353,7 @@
   .detail-body { padding: 4px 24px 24px; }
   .detail-thumb {
     width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px;
-    display: block; background: var(--line); margin-top: 12px;
+    display: block; background: var(--line); margin: 4px 0 4px;
   }
   .detail-user { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
   .detail-note { font-size: 15px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; }
@@ -475,10 +475,10 @@
       </button>
     </div>
     <div class="detail-body">
+      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
       <p class="detail-user" id="detailUser" style="display:none;"></p>
       <p class="detail-note" id="detailNote" style="display:none;"></p>
       <p class="detail-meta" id="detailMeta"></p>
-      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
 
       <div id="detailViewMode">
         <div class="detail-actions">
