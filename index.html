@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Sheet — お気に入り投稿の現像シート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #1A1A1A;
+    --line: #E5E1D6;
+    --muted: #8a8578;
+    --accent: #C87856;
+    --danger: #B5423F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  button, input, textarea, select { font-family: inherit; }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 28px 20px 20px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  h1 {
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 30px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+  .subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .add-btn:hover { opacity: 0.85; }
+
+  .controls {
+    max-width: 960px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .search-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .search-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .clear-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--muted);
+    display: none;
+  }
+  .view-toggle {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .view-btn {
+    border: none;
+    background: transparent;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .view-btn.active { background: var(--ink); color: var(--bg); }
+
+  .cat-row {
+    max-width: 960px;
+    margin: 14px auto 0;
+    padding: 0 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .cat-chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .cat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  main {
+    max-width: 960px;
+    margin: 24px auto 0;
+    padding: 0 20px 48px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+  .frame {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .frame:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+  .frame-holes {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--ink);
+  }
+  .hole { width: 5px; height: 5px; border-radius: 50%; background: var(--bg); opacity: 0.35; }
+  .frame-body {
+    padding: 14px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    aspect-ratio: 1 / 1;
+    justify-content: flex-end;
+  }
+  .frame-num { font-size: 11px; color: #c2bda8; letter-spacing: 0.05em; }
+  .frame-cat-dot { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 2px; }
+  .frame-note {
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .frame-cat { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .row { display: flex; align-items: center; gap: 4px; background: #fff; padding: 10px 10px 10px 14px; }
+  .row-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    padding: 4px 0;
+    min-width: 0;
+  }
+  .row-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .row-text { min-width: 0; }
+  .row-note { font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+  .row-icon-btn {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+  .row-icon-btn:hover { background: var(--bg); }
+
+  .empty-state { text-align: center; padding: 64px 20px; }
+  .empty-frame {
+    width: 64px; height: 64px; margin: 0 auto 20px;
+    border: 2px solid var(--line); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-frame-inner { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--accent); }
+  .empty-title { font-family: 'Zen Old Mincho', serif; font-size: 18px; margin: 0 0 8px; }
+  .empty-text { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+  .empty-add-btn {
+    margin-top: 20px; background: var(--ink); color: var(--bg); border: none;
+    border-radius: 999px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(26,26,26,0.5);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 100;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--bg); border-radius: 14px; width: 100%; max-width: 420px;
+    max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 8px;
+  }
+  .modal-title { font-family: 'Zen Old Mincho', serif; font-size: 19px; margin: 0; }
+  .icon-btn { border: none; background: transparent; cursor: pointer; color: var(--ink); display: flex; padding: 4px; }
+
+  form { display: flex; flex-direction: column; gap: 14px; padding: 12px 24px 24px; }
+  label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #5c5748; font-weight: 500; }
+  .field input, .field textarea, .field select {
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+    background: #fff; color: var(--ink); outline: none;
+  }
+  .field textarea { min-height: 72px; resize: vertical; }
+  .form-error { color: var(--danger); font-size: 13px; margin: 0; }
+  .submit-btn {
+    margin-top: 4px; background: var(--ink); color: var(--bg); border: none;
+    border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+
+  .detail-cat-tag {
+    display: inline-flex; align-items: center; gap: 5px; color: #fff;
+    font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
+  }
+  .detail-body { padding: 4px 24px 24px; }
+  .detail-user { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
+  .detail-note { font-size: 15px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; }
+  .detail-meta { font-size: 12px; color: var(--muted); margin: 8px 0 20px; }
+  .detail-actions { display: flex; gap: 8px; }
+  .open-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--ink); color: var(--bg); border-radius: 8px; padding: 11px;
+    font-size: 13px; font-weight: 600; text-decoration: none;
+  }
+  .delete-btn {
+    display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--line);
+    color: var(--danger); border-radius: 8px; padding: 11px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
+  svg { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Contact Sheet</h1>
+      <p class="subtitle">保存した投稿の現像シート</p>
+    </div>
+    <button class="add-btn" id="openFormBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      <span>追加</span>
+    </button>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8578" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="メモ・カテゴリ・ユーザー名で検索">
+    <button class="clear-btn" id="clearSearchBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="view-toggle">
+    <button class="view-btn active" id="gridViewBtn" aria-label="グリッド表示">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </button>
+    <button class="view-btn" id="listViewBtn" aria-label="リスト表示">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="cat-row" id="catRow"></div>
+
+<main id="mainArea"></main>
+
+<!-- 追加フォーム -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">投稿を追加</h2>
+      <button class="icon-btn" id="closeFormBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="entryForm">
+      <label class="field">
+        投稿のURL
+        <input type="text" id="formUrl" placeholder="https://www.instagram.com/p/...">
+      </label>
+      <label class="field">
+        メモ（任意）
+        <textarea id="formNote" placeholder="何が良かったか、なぜ保存したか"></textarea>
+      </label>
+      <label class="field">
+        カテゴリ
+        <select id="formCat"></select>
+      </label>
+      <label class="field">
+        新しいカテゴリを作る（任意）
+        <input type="text" id="formNewCat" placeholder="例：インテリア">
+      </label>
+      <p class="form-error" id="formError" style="display:none;"></p>
+      <button type="submit" class="submit-btn">保存する</button>
+    </form>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="detail-cat-tag" id="detailCatTag"></span>
+      <button class="icon-btn" id="closeDetailBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="detail-body">
+      <p class="detail-user" id="detailUser" style="display:none;"></p>
+      <p class="detail-note" id="detailNote" style="display:none;"></p>
+      <p class="detail-meta" id="detailMeta"></p>
+      <div class="detail-actions">
+        <a href="#" target="_blank" rel="noopener noreferrer" class="open-btn" id="detailOpenBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Instagramで開く
+        </a>
+        <button class="delete-btn" id="detailDeleteBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          削除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "insta_saves_entries";
+const CATEGORIES_KEY = "insta_saves_categories";
+const DEFAULT_CATEGORIES = ["レシピ", "ファッション", "旅行", "インテリア", "その他"];
+const CATEGORY_COLORS = {
+  "レシピ": "#C87856",
+  "ファッション": "#8A7B9E",
+  "旅行": "#5E8B7E",
+  "インテリア": "#B08968",
+  "その他": "#7D8597",
+};
+
+let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || "null") || [...DEFAULT_CATEGORIES];
+let query = "";
+let activeCat = "すべて";
+let view = "grid";
+let selectedId = null;
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+}
+
+function colorFor(cat) {
+  if (CATEGORY_COLORS[cat]) return CATEGORY_COLORS[cat];
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 35%, 52%)`;
+}
+
+function extractUsername(url) {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    if (parts[0] === "p" || parts[0] === "reel") return null;
+    return parts[0] || null;
+  } catch { return null; }
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const day = 86400000;
+  if (diff < day) return "今日";
+  if (diff < 2 * day) return "昨日";
+  const days = Math.floor(diff / day);
+  if (days < 30) return `${days}日前`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}ヶ月前`;
+  return `${Math.floor(months / 12)}年前`;
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+function getFiltered() {
+  return entries
+    .filter(e => activeCat === "すべて" ? true : e.category === activeCat)
+    .filter(e => {
+      if (!query.trim()) return true;
+      const q = query.toLowerCase();
+      return (e.note || "").toLowerCase().includes(q)
+        || e.url.toLowerCase().includes(q)
+        || (e.username || "").toLowerCase().includes(q)
+        || e.category.toLowerCase().includes(q);
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+function renderCatRow() {
+  const el = document.getElementById("catRow");
+  const allCats = ["すべて", ...categories];
+  el.innerHTML = allCats.map(c => {
+    const isActive = activeCat === c;
+    const dot = c !== "すべて"
+      ? `<span class="cat-dot" style="background:${isActive ? '#FAFAF8' : colorFor(c)}"></span>`
+      : "";
+    return `<button class="cat-chip ${isActive ? 'active' : ''}" data-cat="${esc(c)}">${dot}${esc(c)}</button>`;
+  }).join("");
+  el.querySelectorAll(".cat-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCat = btn.dataset.cat;
+      renderAll();
+    });
+  });
+}
+
+function renderMain() {
+  const el = document.getElementById("mainArea");
+  const filtered = getFiltered();
+
+  if (filtered.length === 0) {
+    if (entries.length === 0) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-frame"><div class="empty-frame-inner"></div></div>
+          <p class="empty-title">まだ何も保存されていません</p>
+          <p class="empty-text">お気に入りのInstagram投稿のURLを追加して、<br>ここにコレクションを作りましょう。</p>
+          <button class="empty-add-btn" id="emptyAddBtn">最初の1件を追加する</button>
+        </div>`;
+      document.getElementById("emptyAddBtn").addEventListener("click", openForm);
+    } else {
+      el.innerHTML = `<div class="empty-state"><p class="empty-text">該当する投稿が見つかりませんでした</p></div>`;
+    }
+    return;
+  }
+
+  if (view === "grid") {
+    el.innerHTML = `<div class="grid">${filtered.map((entry, i) => {
+      const num = String(i + 1).padStart(2, "0");
+      const noteText = entry.note || (entry.username ? `@${entry.username}` : "メモなし");
+      return `
+        <button class="frame" data-id="${entry.id}">
+          <div class="frame-holes">${Array.from({length:6}).map(() => `<span class="hole"></span>`).join("")}</div>
+          <div class="frame-body">
+            <span class="frame-num">${num}</span>
+            <span class="frame-cat-dot" style="background:${colorFor(entry.category)}"></span>
+            <p class="frame-note">${esc(noteText)}</p>
+            <p class="frame-cat">${esc(entry.category)}</p>
+          </div>
+        </button>`;
+    }).join("")}</div>`;
+  } else {
+    el.innerHTML = `<div class="list">${filtered.map(entry => {
+      const noteText = entry.note || (entry.username ? `@${entry.username}` : entry.url);
+      return `
+        <div class="row">
+          <button class="row-main" data-id="${entry.id}">
+            <span class="row-dot" style="background:${colorFor(entry.category)}"></span>
+            <div class="row-text">
+              <p class="row-note">${esc(noteText)}</p>
+              <p class="row-meta">${esc(entry.category)} · ${timeAgo(entry.createdAt)}</p>
+            </div>
+          </button>
+          <a href="${esc(entry.url)}" target="_blank" rel="noopener noreferrer" class="row-icon-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <button class="row-icon-btn" data-delete="${entry.id}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>`;
+    }).join("")}</div>`;
+  }
+
+  el.querySelectorAll(".frame, .row-main").forEach(node => {
+    node.addEventListener("click", () => openDetail(node.dataset.id));
+  });
+  el.querySelectorAll("[data-delete]").forEach(node => {
+    node.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteEntry(node.dataset.delete);
+    });
+  });
+}
+
+function renderCatSelect() {
+  const sel = document.getElementById("formCat");
+  sel.innerHTML = categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+
+function renderAll() {
+  renderCatRow();
+  renderMain();
+}
+
+function openForm() {
+  document.getElementById("formError").style.display = "none";
+  document.getElementById("entryForm").reset();
+  renderCatSelect();
+  document.getElementById("formOverlay").classList.add("open");
+  document.getElementById("formUrl").focus();
+}
+function closeForm() {
+  document.getElementById("formOverlay").classList.remove("open");
+}
+
+function openDetail(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  selectedId = id;
+
+  const tag = document.getElementById("detailCatTag");
+  tag.style.background = colorFor(entry.category);
+  tag.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2.83 12.83A2 2 0 012.24 11.4L2.59 3.59A2 2 0 014.59 1.59"/></svg> ${esc(entry.category)}`;
+
+  const userEl = document.getElementById("detailUser");
+  if (entry.username) {
+    userEl.textContent = `@${entry.username}`;
+    userEl.style.display = "block";
+  } else {
+    userEl.style.display = "none";
+  }
+
+  const noteEl = document.getElementById("detailNote");
+  if (entry.note) {
+    noteEl.textContent = entry.note;
+    noteEl.style.display = "block";
+  } else {
+    noteEl.style.display = "none";
+  }
+
+  document.getElementById("detailMeta").textContent = `${timeAgo(entry.createdAt)}に保存`;
+  document.getElementById("detailOpenBtn").href = entry.url;
+
+  document.getElementById("detailOverlay").classList.add("open");
+}
+function closeDetail() {
+  document.getElementById("detailOverlay").classList.remove("open");
+  selectedId = null;
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  save();
+  if (selectedId === id) closeDetail();
+  renderAll();
+}
+
+// イベント設定
+document.getElementById("openFormBtn").addEventListener("click", openForm);
+document.getElementById("closeFormBtn").addEventListener("click", closeForm);
+document.getElementById("formOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "formOverlay") closeForm();
+});
+document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
+document.getElementById("detailOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "detailOverlay") closeDetail();
+});
+document.getElementById("detailDeleteBtn").addEventListener("click", () => {
+  if (selectedId) deleteEntry(selectedId);
+});
+
+document.getElementById("entryForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("formError");
+  errorEl.style.display = "none";
+
+  let url = document.getElementById("formUrl").value.trim();
+  if (!url) {
+    errorEl.textContent = "投稿のURLを入力してください";
+    errorEl.style.display = "block";
+    return;
+  }
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try { new URL(url); } catch {
+    errorEl.textContent = "URLの形式が正しくありません";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  const note = document.getElementById("formNote").value.trim();
+  const formCat = document.getElementById("formCat").value;
+  const newCat = document.getElementById("formNewCat").value.trim();
+  const finalCat = newCat || formCat;
+
+  const entry = {
+    id: `entry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    url,
+    note,
+    category: finalCat,
+    username: extractUsername(url),
+    createdAt: Date.now(),
+  };
+
+  entries = [entry, ...entries];
+  if (newCat && !categories.includes(newCat)) categories.push(newCat);
+
+  save();
+  closeForm();
+  renderAll();
+});
+
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  query = e.target.value;
+  document.getElementById("clearSearchBtn").style.display = query ? "flex" : "none";
+  renderMain();
+});
+document.getElementById("clearSearchBtn").addEventListener("click", () => {
+  query = "";
+  document.getElementById("searchInput").value = "";
+  document.getElementById("clearSearchBtn").style.display = "none";
+  renderMain();
+});
+
+document.getElementById("gridViewBtn").addEventListener("click", () => {
+  view = "grid";
+  document.getElementById("gridViewBtn").classList.add("active");
+  document.getElementById("listViewBtn").classList.remove("active");
+  renderMain();
+});
+document.getElementById("listViewBtn").addEventListener("click", () => {
+  view = "list";
+  document.getElementById("listViewBtn").classList.add("active");
+  document.getElementById("gridViewBtn").classList.remove("active");
+  renderMain();
+});
+
+renderAll();
+</script>
+</body>
+</html>
