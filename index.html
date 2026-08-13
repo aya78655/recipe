@@ -235,11 +235,11 @@
     border-radius: 10px;
     overflow: hidden;
   }
-  .row { display: flex; align-items: center; gap: 4px; background: #fff; padding: 10px 10px 10px 14px; }
+  .row { display: flex; align-items: flex-start; gap: 4px; background: #fff; padding: 12px 10px 12px 14px; }
   .row-main {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     border: none;
     background: transparent;
@@ -248,13 +248,15 @@
     padding: 4px 0;
     min-width: 0;
   }
-  .row-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .row-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
   .row-thumb {
-    width: 40px; height: 40px; border-radius: 6px; object-fit: cover;
-    flex-shrink: 0; background: var(--line);
+    width: 48px; height: 48px; border-radius: 6px; object-fit: cover;
+    flex-shrink: 0; background: var(--line); align-self: flex-start;
   }
-  .row-text { min-width: 0; }
-  .row-note { font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .row-user { font-size: 12px; font-weight: 600; margin: 0; color: var(--muted); }
+  .row-note { font-size: 14px; margin: 0; line-height: 1.4; overflow-wrap: break-word; }
+  .row-note.no-note { color: var(--muted); font-style: italic; }
   .row-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
   .row-icon-btn {
     border: none;
@@ -265,6 +267,8 @@
     display: flex;
     border-radius: 8px;
     text-decoration: none;
+    margin-top: 4px;
+    flex-shrink: 0;
   }
   .row-icon-btn:hover { background: var(--bg); }
 
@@ -353,7 +357,7 @@
   .detail-body { padding: 4px 24px 24px; }
   .detail-thumb {
     width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px;
-    display: block; background: var(--line); margin: 4px 0 4px;
+    display: block; background: var(--line); margin-top: 12px;
   }
   .detail-user { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
   .detail-note { font-size: 15px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; }
@@ -475,10 +479,10 @@
       </button>
     </div>
     <div class="detail-body">
-      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
       <p class="detail-user" id="detailUser" style="display:none;"></p>
       <p class="detail-note" id="detailNote" style="display:none;"></p>
       <p class="detail-meta" id="detailMeta"></p>
+      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
 
       <div id="detailViewMode">
         <div class="detail-actions">
@@ -772,16 +776,19 @@ function renderMain() {
     }).join("")}</div>`;
   } else {
     el.innerHTML = `<div class="list">${filtered.map(entry => {
-      const noteText = entry.note || (entry.username ? `@${entry.username}` : entry.url);
+      const hasNote = !!entry.note;
+      const noteText = hasNote ? entry.note : "メモなし";
       const thumbImg = entry.thumbnail
         ? `<img class="row-thumb" src="${esc(entry.thumbnail)}" alt="" loading="lazy" onerror="this.remove()">`
         : `<span class="row-dot" style="background:${colorFor(entry.category)}"></span>`;
+      const userLine = entry.username ? `<p class="row-user">@${esc(entry.username)}</p>` : "";
       return `
         <div class="row">
           <button class="row-main" data-id="${entry.id}">
             ${thumbImg}
             <div class="row-text">
-              <p class="row-note">${esc(noteText)}</p>
+              ${userLine}
+              <p class="row-note ${hasNote ? '' : 'no-note'}">${esc(noteText)}</p>
               <p class="row-meta">${esc(entry.category)} · ${timeAgo(entry.createdAt)}</p>
             </div>
           </button>
