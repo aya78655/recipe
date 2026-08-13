@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contact Sheet — お気に入り投稿の現像シート</title>
+<title>Storage — お気に入り投稿のコレクション</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -18,7 +18,10 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--bg);
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23C87856' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.16'%3E%3Cg transform='translate(28,26) rotate(-6)'%3E%3Cpath d='M0 14 h40 a4 4 0 0 1 4 4 v18 a14 14 0 0 1 -14 14 h-20 a14 14 0 0 1 -14 -14 v-18 a4 4 0 0 1 4 -4 z'/%3E%3Cpath d='M44 20 h7 a7 7 0 0 1 0 14 h-6'/%3E%3Cpath d='M9 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3Cpath d='M18 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3Cpath d='M27 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3C/g%3E%3Cg transform='translate(150,150) rotate(8)'%3E%3Cpath d='M0 14 h40 a4 4 0 0 1 4 4 v18 a14 14 0 0 1 -14 14 h-20 a14 14 0 0 1 -14 -14 v-18 a4 4 0 0 1 4 -4 z'/%3E%3Cpath d='M44 20 h7 a7 7 0 0 1 0 14 h-6'/%3E%3Cpath d='M9 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3Cpath d='M18 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3Cpath d='M27 8 c-2 -5 2 -6 0 -11' stroke-width='1.6'/%3E%3C/g%3E%3Cg transform='translate(150,26) rotate(10)'%3E%3Cpath d='M0 18 C2 4 20 -2 30 8 C40 -2 58 4 60 18 C60 26 42 40 30 48 C18 40 0 26 0 18 Z'/%3E%3C/g%3E%3Cg transform='translate(30,150) rotate(-14)'%3E%3Cpath d='M0 18 C2 4 20 -2 30 8 C40 -2 58 4 60 18 C60 26 42 40 30 48 C18 40 0 26 0 18 Z'/%3E%3C/g%3E%3Cg transform='translate(105,90) rotate(4)'%3E%3Cellipse cx='16' cy='9' rx='16' ry='9'/%3E%3Cpath d='M2 9 C10 -1 22 -1 30 9'/%3E%3C/g%3E%3Cg transform='translate(200,90) rotate(-20)'%3E%3Cpath d='M6 34 C2 20 2 10 10 0 C14 8 12 12 16 16 C22 10 20 4 24 0 C30 10 28 22 20 30 C16 34 10 36 6 34 Z'/%3E%3Cpath d='M14 34 v10' stroke-width='1.6'/%3E%3C/g%3E%3Cg transform='translate(70,210) rotate(12)'%3E%3Cpath d='M6 34 C2 20 2 10 10 0 C14 8 12 12 16 16 C22 10 20 4 24 0 C30 10 28 22 20 30 C16 34 10 36 6 34 Z'/%3E%3Cpath d='M14 34 v10' stroke-width='1.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 260px 260px;
     color: var(--ink);
     font-family: 'Noto Sans JP', sans-serif;
   }
@@ -179,9 +182,33 @@
     gap: 4px;
     aspect-ratio: 1 / 1;
     justify-content: flex-end;
+    position: relative;
+  }
+  .frame-body.has-thumb {
+    padding: 10px 10px 10px;
+    justify-content: flex-start;
+  }
+  .frame-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 3px;
+    display: block;
+    background: var(--line);
+    margin-bottom: 8px;
   }
   .frame-num { font-size: 11px; color: #c2bda8; letter-spacing: 0.05em; }
-  .frame-cat-dot { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 2px; }
+  .frame-body.has-thumb .frame-num {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(26,26,26,0.55);
+    color: #FAFAF8;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .frame-cat-dot { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 2px; flex-shrink: 0; }
   .frame-note {
     font-size: 13px;
     line-height: 1.4;
@@ -192,7 +219,12 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .frame-body.has-thumb .frame-note {
+    -webkit-line-clamp: 2;
+    font-size: 12px;
+  }
   .frame-cat { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+  .frame-meta-row { display: flex; align-items: center; gap: 6px; }
 
   .list {
     display: flex;
@@ -217,6 +249,10 @@
     min-width: 0;
   }
   .row-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .row-thumb {
+    width: 40px; height: 40px; border-radius: 6px; object-fit: cover;
+    flex-shrink: 0; background: var(--line);
+  }
   .row-text { min-width: 0; }
   .row-note { font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
@@ -280,10 +316,25 @@
     font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
   }
   .detail-body { padding: 4px 24px 24px; }
+  .detail-thumb {
+    width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px;
+    display: block; background: var(--line); margin-top: 12px;
+  }
   .detail-user { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
   .detail-note { font-size: 15px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; }
   .detail-meta { font-size: 12px; color: var(--muted); margin: 8px 0 20px; }
-  .detail-actions { display: flex; gap: 8px; }
+  .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .edit-btn {
+    display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--line);
+    color: var(--ink); border-radius: 8px; padding: 11px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .cancel-btn {
+    flex: 1; background: #fff; border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  #detailEditMode .submit-btn { flex: 1; margin-top: 0; }
+  #detailEditMode form { padding: 12px 0 0; }
   .open-btn {
     flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
     background: var(--ink); color: var(--bg); border-radius: 8px; padding: 11px;
@@ -302,8 +353,8 @@
 <header>
   <div class="header-inner">
     <div>
-      <h1>Contact Sheet</h1>
-      <p class="subtitle">保存した投稿の現像シート</p>
+      <h1>Storage</h1>
+      <p class="subtitle">保存した投稿のコレクション</p>
     </div>
     <button class="add-btn" id="openFormBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -349,6 +400,10 @@
         <input type="text" id="formUrl" placeholder="https://www.instagram.com/p/...">
       </label>
       <label class="field">
+        サムネイル画像URL（任意）
+        <input type="text" id="formThumb" placeholder="https://...jpg（画像を右クリック→「画像アドレスをコピー」）">
+      </label>
+      <label class="field">
         メモ（任意）
         <textarea id="formNote" placeholder="何が良かったか、なぜ保存したか"></textarea>
       </label>
@@ -379,15 +434,53 @@
       <p class="detail-user" id="detailUser" style="display:none;"></p>
       <p class="detail-note" id="detailNote" style="display:none;"></p>
       <p class="detail-meta" id="detailMeta"></p>
-      <div class="detail-actions">
-        <a href="#" target="_blank" rel="noopener noreferrer" class="open-btn" id="detailOpenBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Instagramで開く
-        </a>
-        <button class="delete-btn" id="detailDeleteBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          削除
-        </button>
+      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+
+      <div id="detailViewMode">
+        <div class="detail-actions">
+          <a href="#" target="_blank" rel="noopener noreferrer" class="open-btn" id="detailOpenBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Instagramで開く
+          </a>
+          <button class="edit-btn" id="detailEditBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            編集
+          </button>
+          <button class="delete-btn" id="detailDeleteBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            削除
+          </button>
+        </div>
+      </div>
+
+      <div id="detailEditMode" style="display:none;">
+        <form id="editForm">
+          <label class="field">
+            投稿のURL
+            <input type="text" id="editUrl">
+          </label>
+          <label class="field">
+            サムネイル画像URL（任意）
+            <input type="text" id="editThumb" placeholder="https://...jpg">
+          </label>
+          <label class="field">
+            メモ（任意）
+            <textarea id="editNote"></textarea>
+          </label>
+          <label class="field">
+            カテゴリ
+            <select id="editCat"></select>
+          </label>
+          <label class="field">
+            新しいカテゴリを作る（任意）
+            <input type="text" id="editNewCat" placeholder="例：インテリア">
+          </label>
+          <p class="form-error" id="editError" style="display:none;"></p>
+          <div class="edit-actions">
+            <button type="button" class="cancel-btn" id="editCancelBtn">キャンセル</button>
+            <button type="submit" class="submit-btn">保存する</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -508,12 +601,19 @@ function renderMain() {
     el.innerHTML = `<div class="grid">${filtered.map((entry, i) => {
       const num = String(i + 1).padStart(2, "0");
       const noteText = entry.note || (entry.username ? `@${entry.username}` : "メモなし");
+      const hasThumb = !!entry.thumbnail;
+      const thumbImg = hasThumb
+        ? `<img class="frame-thumb" src="${esc(entry.thumbnail)}" alt="" loading="lazy" onerror="this.remove()">`
+        : "";
       return `
         <button class="frame" data-id="${entry.id}">
           <div class="frame-holes">${Array.from({length:6}).map(() => `<span class="hole"></span>`).join("")}</div>
-          <div class="frame-body">
+          <div class="frame-body ${hasThumb ? 'has-thumb' : ''}">
+            ${thumbImg}
             <span class="frame-num">${num}</span>
-            <span class="frame-cat-dot" style="background:${colorFor(entry.category)}"></span>
+            <div class="frame-meta-row">
+              <span class="frame-cat-dot" style="background:${colorFor(entry.category)}"></span>
+            </div>
             <p class="frame-note">${esc(noteText)}</p>
             <p class="frame-cat">${esc(entry.category)}</p>
           </div>
@@ -522,10 +622,13 @@ function renderMain() {
   } else {
     el.innerHTML = `<div class="list">${filtered.map(entry => {
       const noteText = entry.note || (entry.username ? `@${entry.username}` : entry.url);
+      const thumbImg = entry.thumbnail
+        ? `<img class="row-thumb" src="${esc(entry.thumbnail)}" alt="" loading="lazy" onerror="this.remove()">`
+        : `<span class="row-dot" style="background:${colorFor(entry.category)}"></span>`;
       return `
         <div class="row">
           <button class="row-main" data-id="${entry.id}">
-            <span class="row-dot" style="background:${colorFor(entry.category)}"></span>
+            ${thumbImg}
             <div class="row-text">
               <p class="row-note">${esc(noteText)}</p>
               <p class="row-meta">${esc(entry.category)} · ${timeAgo(entry.createdAt)}</p>
@@ -552,9 +655,10 @@ function renderMain() {
   });
 }
 
-function renderCatSelect() {
-  const sel = document.getElementById("formCat");
+function renderCatSelect(selectEl, selectedCat) {
+  const sel = selectEl || document.getElementById("formCat");
   sel.innerHTML = categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  if (selectedCat && categories.includes(selectedCat)) sel.value = selectedCat;
 }
 
 function renderAll() {
@@ -577,7 +681,12 @@ function openDetail(id) {
   const entry = entries.find(e => e.id === id);
   if (!entry) return;
   selectedId = id;
+  showDetailViewMode();
+  fillDetailView(entry);
+  document.getElementById("detailOverlay").classList.add("open");
+}
 
+function fillDetailView(entry) {
   const tag = document.getElementById("detailCatTag");
   tag.style.background = colorFor(entry.category);
   tag.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2.83 12.83A2 2 0 012.24 11.4L2.59 3.59A2 2 0 014.59 1.59"/></svg> ${esc(entry.category)}`;
@@ -601,8 +710,34 @@ function openDetail(id) {
   document.getElementById("detailMeta").textContent = `${timeAgo(entry.createdAt)}に保存`;
   document.getElementById("detailOpenBtn").href = entry.url;
 
-  document.getElementById("detailOverlay").classList.add("open");
+  const thumbEl = document.getElementById("detailThumb");
+  if (entry.thumbnail) {
+    thumbEl.src = entry.thumbnail;
+    thumbEl.style.display = "block";
+  } else {
+    thumbEl.removeAttribute("src");
+    thumbEl.style.display = "none";
+  }
 }
+
+function showDetailViewMode() {
+  document.getElementById("detailViewMode").style.display = "block";
+  document.getElementById("detailEditMode").style.display = "none";
+}
+
+function showDetailEditMode() {
+  const entry = entries.find(e => e.id === selectedId);
+  if (!entry) return;
+  document.getElementById("editError").style.display = "none";
+  document.getElementById("editUrl").value = entry.url || "";
+  document.getElementById("editThumb").value = entry.thumbnail || "";
+  document.getElementById("editNote").value = entry.note || "";
+  renderCatSelect(document.getElementById("editCat"), entry.category);
+  document.getElementById("editNewCat").value = "";
+  document.getElementById("detailViewMode").style.display = "none";
+  document.getElementById("detailEditMode").style.display = "block";
+}
+
 function closeDetail() {
   document.getElementById("detailOverlay").classList.remove("open");
   selectedId = null;
@@ -628,6 +763,51 @@ document.getElementById("detailOverlay").addEventListener("click", (e) => {
 document.getElementById("detailDeleteBtn").addEventListener("click", () => {
   if (selectedId) deleteEntry(selectedId);
 });
+document.getElementById("detailEditBtn").addEventListener("click", showDetailEditMode);
+document.getElementById("editCancelBtn").addEventListener("click", showDetailViewMode);
+
+document.getElementById("editForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("editError");
+  errorEl.style.display = "none";
+
+  const entry = entries.find(en => en.id === selectedId);
+  if (!entry) return;
+
+  let url = document.getElementById("editUrl").value.trim();
+  if (!url) {
+    errorEl.textContent = "投稿のURLを入力してください";
+    errorEl.style.display = "block";
+    return;
+  }
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try { new URL(url); } catch {
+    errorEl.textContent = "URLの形式が正しくありません";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  let thumbnail = document.getElementById("editThumb").value.trim();
+  if (thumbnail && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
+
+  const note = document.getElementById("editNote").value.trim();
+  const formCat = document.getElementById("editCat").value;
+  const newCat = document.getElementById("editNewCat").value.trim();
+  const finalCat = newCat || formCat;
+
+  entry.url = url;
+  entry.thumbnail = thumbnail || null;
+  entry.note = note;
+  entry.category = finalCat;
+  entry.username = extractUsername(url);
+
+  if (newCat && !categories.includes(newCat)) categories.push(newCat);
+
+  save();
+  fillDetailView(entry);
+  showDetailViewMode();
+  renderAll();
+});
 
 document.getElementById("entryForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -651,6 +831,8 @@ document.getElementById("entryForm").addEventListener("submit", (e) => {
   const formCat = document.getElementById("formCat").value;
   const newCat = document.getElementById("formNewCat").value.trim();
   const finalCat = newCat || formCat;
+  let thumbnail = document.getElementById("formThumb").value.trim();
+  if (thumbnail && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
 
   const entry = {
     id: `entry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -658,6 +840,7 @@ document.getElementById("entryForm").addEventListener("submit", (e) => {
     note,
     category: finalCat,
     username: extractUsername(url),
+    thumbnail: thumbnail || null,
     createdAt: Date.now(),
   };
 
