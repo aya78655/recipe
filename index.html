@@ -355,9 +355,58 @@
     font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
   }
   .detail-body { padding: 4px 24px 24px; }
-  .detail-thumb {
+  .gallery { margin-top: 12px; }
+  .gallery-main { position: relative; }
+  .gallery-img {
     width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px;
-    display: block; background: var(--line); margin-top: 12px;
+    display: block; background: var(--line);
+  }
+  .gallery-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 34px; height: 34px; border-radius: 50%; border: none;
+    background: rgba(26,26,26,0.55); color: #FAFAF8; font-size: 22px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 0 3px;
+  }
+  .gallery-nav:hover { background: rgba(26,26,26,0.8); }
+  .gallery-prev { left: 8px; }
+  .gallery-next { right: 8px; }
+  .gallery-count {
+    position: absolute; top: 8px; right: 8px; background: rgba(26,26,26,0.55);
+    color: #FAFAF8; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  }
+  .gallery-thumbs { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .gallery-thumb {
+    width: 52px; height: 52px; flex-shrink: 0; object-fit: cover; border-radius: 6px;
+    border: 2px solid transparent; cursor: pointer; opacity: 0.6; background: var(--line);
+  }
+  .gallery-thumb.active { border-color: var(--accent); opacity: 1; }
+  .img-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+  .img-item { position: relative; width: 64px; height: 64px; }
+  .img-item img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--line); display: block;
+  }
+  .img-remove {
+    position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+    border: none; background: var(--danger); color: #fff; font-size: 13px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 0 1px;
+  }
+  .url-add-row { display: flex; gap: 8px; }
+  .url-add-row input { flex: 1; min-width: 0; }
+  .url-add-btn {
+    border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px;
+    padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  }
+  .url-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .img-badge {
+    position: absolute; top: 16px; right: 16px; background: rgba(26,26,26,0.6);
+    color: #FAFAF8; font-size: 10px; padding: 1px 7px; border-radius: 999px; z-index: 1;
+  }
+  .row-thumb-wrap { position: relative; flex-shrink: 0; align-self: flex-start; }
+  .row-thumb-wrap .row-thumb { display: block; }
+  .row-badge {
+    position: absolute; right: -4px; bottom: -4px; background: var(--ink); color: #FAFAF8;
+    font-size: 10px; padding: 0 6px; border-radius: 999px; line-height: 16px;
   }
   .detail-user { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
   .detail-note { font-size: 15px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; }
@@ -438,19 +487,21 @@
         投稿のURL
         <input type="text" id="formUrl" placeholder="https://www.instagram.com/p/...">
       </label>
-      <label class="field">
-        サムネイル画像
+      <div class="field">
+        <span id="formImagesLabel">写真（複数枚OK）</span>
         <div class="thumb-input-row">
-          <label class="upload-btn" for="formThumbFile">
+          <label class="upload-btn" for="formImagesFile">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             スクショをアップロード
           </label>
-          <input type="file" id="formThumbFile" accept="image/*" style="display:none;">
-          <img id="formThumbPreview" class="thumb-preview" style="display:none;" alt="" onerror="this.style.display='none'">
-          <button type="button" id="formThumbClear" class="thumb-clear-btn" style="display:none;">削除</button>
+          <input type="file" id="formImagesFile" accept="image/*" multiple style="display:none;">
         </div>
-        <input type="text" id="formThumb" placeholder="または画像URLを貼り付け（https://...jpg）">
-      </label>
+        <div class="url-add-row">
+          <input type="text" id="formImagesUrl" placeholder="または画像URLを貼り付け（https://...jpg）">
+          <button type="button" class="url-add-btn" id="formImagesUrlAdd">追加</button>
+        </div>
+        <div class="img-strip" id="formImagesStrip"></div>
+      </div>
       <label class="field">
         メモ（任意）
         <textarea id="formNote" placeholder="何が良かったか、なぜ保存したか"></textarea>
@@ -482,7 +533,15 @@
       <p class="detail-user" id="detailUser" style="display:none;"></p>
       <p class="detail-note" id="detailNote" style="display:none;"></p>
       <p class="detail-meta" id="detailMeta"></p>
-      <img class="detail-thumb" id="detailThumb" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+      <div class="gallery" id="detailGallery" style="display:none;">
+        <div class="gallery-main">
+          <img class="gallery-img" id="galleryImg" src="" alt="">
+          <button type="button" class="gallery-nav gallery-prev" id="galleryPrev" aria-label="前の写真">‹</button>
+          <button type="button" class="gallery-nav gallery-next" id="galleryNext" aria-label="次の写真">›</button>
+          <span class="gallery-count" id="galleryCount"></span>
+        </div>
+        <div class="gallery-thumbs" id="galleryThumbs"></div>
+      </div>
 
       <div id="detailViewMode">
         <div class="detail-actions">
@@ -507,19 +566,21 @@
             投稿のURL
             <input type="text" id="editUrl">
           </label>
-          <label class="field">
-            サムネイル画像
+          <div class="field">
+            <span>写真（複数枚OK）</span>
             <div class="thumb-input-row">
-              <label class="upload-btn" for="editThumbFile">
+              <label class="upload-btn" for="editImagesFile">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 スクショをアップロード
               </label>
-              <input type="file" id="editThumbFile" accept="image/*" style="display:none;">
-              <img id="editThumbPreview" class="thumb-preview" style="display:none;" alt="" onerror="this.style.display='none'">
-              <button type="button" id="editThumbClear" class="thumb-clear-btn" style="display:none;">削除</button>
+              <input type="file" id="editImagesFile" accept="image/*" multiple style="display:none;">
             </div>
-            <input type="text" id="editThumb" placeholder="または画像URLを貼り付け（https://...jpg）">
-          </label>
+            <div class="url-add-row">
+              <input type="text" id="editImagesUrl" placeholder="または画像URLを貼り付け（https://...jpg）">
+              <button type="button" class="url-add-btn" id="editImagesUrlAdd">追加</button>
+            </div>
+            <div class="img-strip" id="editImagesStrip"></div>
+          </div>
           <label class="field">
             メモ（任意）
             <textarea id="editNote"></textarea>
@@ -561,11 +622,25 @@ let query = "";
 let activeCat = "すべて";
 let view = "grid";
 let selectedId = null;
-let formThumbData = null;
-let editThumbData = null;
+let formImages = [];
+let editImages = [];
+let galleryImages = [];
+let galleryIndex = 0;
 
 const MAX_THUMB_DIM = 900;
-const THUMB_QUALITY = 0.82;
+const THUMB_QUALITY = 0.8;
+
+// 旧バージョン(thumbnail 1枚)のデータを images 配列に変換
+function getImages(entry) {
+  if (Array.isArray(entry.images)) return entry.images;
+  return entry.thumbnail ? [entry.thumbnail] : [];
+}
+entries.forEach(e => {
+  if (!Array.isArray(e.images)) {
+    e.images = e.thumbnail ? [e.thumbnail] : [];
+    delete e.thumbnail;
+  }
+});
 
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -584,8 +659,7 @@ function compressImage(file) {
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", THUMB_QUALITY));
       };
       img.src = reader.result;
@@ -594,75 +668,72 @@ function compressImage(file) {
   });
 }
 
-function setupThumbUploader({ fileInputId, urlInputId, previewId, clearBtnId, getSet }) {
-  const fileInput = document.getElementById(fileInputId);
-  const urlInput = document.getElementById(urlInputId);
-  const preview = document.getElementById(previewId);
-  const clearBtn = document.getElementById(clearBtnId);
-
-  fileInput.addEventListener("change", async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    try {
-      const dataUrl = await compressImage(file);
-      getSet.set(dataUrl);
-      preview.src = dataUrl;
-      preview.style.display = "block";
-      clearBtn.style.display = "inline-block";
-      urlInput.value = "";
-    } catch (err) {
-      alert("画像の読み込みに失敗しました。別の画像でお試しください。");
-    } finally {
-      fileInput.value = "";
-    }
-  });
-
-  clearBtn.addEventListener("click", () => {
-    getSet.set(null);
-    urlInput.value = "";
-    preview.removeAttribute("src");
-    preview.style.display = "none";
-    clearBtn.style.display = "none";
-    fileInput.value = "";
-  });
-
-  urlInput.addEventListener("input", () => {
-    if (urlInput.value.trim() && getSet.get()) {
-      getSet.set(null);
-      preview.removeAttribute("src");
-      preview.style.display = "none";
-      clearBtn.style.display = "none";
-    }
+function renderImageStrip(stripId, list) {
+  const strip = document.getElementById(stripId);
+  strip.innerHTML = list.map((src, i) => `
+    <div class="img-item">
+      <img src="${esc(src)}" alt="" onerror="this.style.opacity=0.3">
+      <button type="button" class="img-remove" data-idx="${i}" aria-label="この写真を削除">×</button>
+    </div>`).join("");
+  strip.querySelectorAll(".img-remove").forEach(btn => {
+    btn.addEventListener("click", () => {
+      list.splice(Number(btn.dataset.idx), 1);
+      renderImageStrip(stripId, list);
+    });
   });
 }
 
-function resetThumbUploaderUI({ urlInputId, previewId, clearBtnId }, value) {
-  const urlInput = document.getElementById(urlInputId);
-  const preview = document.getElementById(previewId);
-  const clearBtn = document.getElementById(clearBtnId);
+function normalizeUrl(u) {
+  u = u.trim();
+  if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  try { new URL(u); return u; } catch { return ""; }
+}
 
-  if (value && value.startsWith("data:")) {
-    preview.src = value;
-    preview.style.display = "block";
-    clearBtn.style.display = "inline-block";
-    urlInput.value = "";
-  } else {
-    urlInput.value = value || "";
-    if (value) {
-      preview.src = value;
-      preview.style.display = "block";
-      clearBtn.style.display = "inline-block";
-    } else {
-      preview.removeAttribute("src");
-      preview.style.display = "none";
-      clearBtn.style.display = "none";
+// list: 配列(参照を保持) / getList: 現在の配列を返す関数
+function setupImageUploader({ fileId, urlId, urlAddId, stripId, getList }) {
+  const fileInput = document.getElementById(fileId);
+  const urlInput = document.getElementById(urlId);
+
+  fileInput.addEventListener("change", async () => {
+    const files = Array.from(fileInput.files);
+    if (!files.length) return;
+    let failed = 0;
+    for (const file of files) {
+      try {
+        getList().push(await compressImage(file));
+      } catch { failed++; }
     }
+    fileInput.value = "";
+    renderImageStrip(stripId, getList());
+    if (failed) alert(`${failed}枚の画像を読み込めませんでした。別の画像でお試しください。`);
+  });
+
+  function addUrl() {
+    const u = normalizeUrl(urlInput.value);
+    if (!u) {
+      if (urlInput.value.trim()) alert("画像URLの形式が正しくありません");
+      return;
+    }
+    getList().push(u);
+    urlInput.value = "";
+    renderImageStrip(stripId, getList());
   }
+  document.getElementById(urlAddId).addEventListener("click", addUrl);
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addUrl(); }
+  });
 }
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+    return true;
+  } catch (err) {
+    alert("保存容量がいっぱいです。写真の枚数を減らすか、不要な投稿を削除してください。");
+    return false;
+  }
 }
 
 function colorFor(cat) {
@@ -756,15 +827,18 @@ function renderMain() {
     el.innerHTML = `<div class="grid">${filtered.map((entry, i) => {
       const num = String(i + 1).padStart(2, "0");
       const noteText = entry.note || (entry.username ? `@${entry.username}` : "メモなし");
-      const hasThumb = !!entry.thumbnail;
+      const imgs = getImages(entry);
+      const hasThumb = imgs.length > 0;
       const thumbImg = hasThumb
-        ? `<img class="frame-thumb" src="${esc(entry.thumbnail)}" alt="" loading="lazy" onerror="this.remove()">`
+        ? `<img class="frame-thumb" src="${esc(imgs[0])}" alt="" loading="lazy" onerror="this.remove()">`
         : "";
+      const badge = imgs.length > 1 ? `<span class="img-badge">${imgs.length}枚</span>` : "";
       return `
         <button class="frame" data-id="${entry.id}">
           <div class="frame-holes">${Array.from({length:6}).map(() => `<span class="hole"></span>`).join("")}</div>
           <div class="frame-body ${hasThumb ? 'has-thumb' : ''}">
             ${thumbImg}
+            ${badge}
             <span class="frame-num">${num}</span>
             <div class="frame-meta-row">
               <span class="frame-cat-dot" style="background:${colorFor(entry.category)}"></span>
@@ -778,8 +852,9 @@ function renderMain() {
     el.innerHTML = `<div class="list">${filtered.map(entry => {
       const hasNote = !!entry.note;
       const noteText = hasNote ? entry.note : "メモなし";
-      const thumbImg = entry.thumbnail
-        ? `<img class="row-thumb" src="${esc(entry.thumbnail)}" alt="" loading="lazy" onerror="this.remove()">`
+      const imgs = getImages(entry);
+      const thumbImg = imgs.length
+        ? `<span class="row-thumb-wrap"><img class="row-thumb" src="${esc(imgs[0])}" alt="" loading="lazy" onerror="this.remove()">${imgs.length > 1 ? `<span class="row-badge">${imgs.length}</span>` : ""}</span>`
         : `<span class="row-dot" style="background:${colorFor(entry.category)}"></span>`;
       const userLine = entry.username ? `<p class="row-user">@${esc(entry.username)}</p>` : "";
       return `
@@ -827,8 +902,8 @@ function renderAll() {
 function openForm() {
   document.getElementById("formError").style.display = "none";
   document.getElementById("entryForm").reset();
-  formThumbData = null;
-  resetThumbUploaderUI({ urlInputId: "formThumb", previewId: "formThumbPreview", clearBtnId: "formThumbClear" }, null);
+  formImages = [];
+  renderImageStrip("formImagesStrip", formImages);
   renderCatSelect();
   document.getElementById("formOverlay").classList.add("open");
   document.getElementById("formUrl").focus();
@@ -870,19 +945,45 @@ function fillDetailView(entry) {
   document.getElementById("detailMeta").textContent = `${timeAgo(entry.createdAt)}に保存`;
   document.getElementById("detailOpenBtn").href = entry.url;
 
-  const thumbEl = document.getElementById("detailThumb");
-  if (entry.thumbnail) {
-    thumbEl.src = entry.thumbnail;
-    thumbEl.style.display = "block";
-  } else {
-    thumbEl.removeAttribute("src");
-    thumbEl.style.display = "none";
+  galleryImages = getImages(entry);
+  galleryIndex = 0;
+  renderGallery();
+}
+
+function renderGallery() {
+  const box = document.getElementById("detailGallery");
+  if (!galleryImages.length) {
+    box.style.display = "none";
+    return;
   }
+  box.style.display = "block";
+  const multi = galleryImages.length > 1;
+  document.getElementById("galleryImg").src = galleryImages[galleryIndex];
+  document.getElementById("galleryPrev").style.display = multi ? "flex" : "none";
+  document.getElementById("galleryNext").style.display = multi ? "flex" : "none";
+  const count = document.getElementById("galleryCount");
+  count.style.display = multi ? "block" : "none";
+  count.textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
+  const thumbs = document.getElementById("galleryThumbs");
+  thumbs.style.display = multi ? "flex" : "none";
+  thumbs.innerHTML = galleryImages.map((src, i) =>
+    `<img class="gallery-thumb ${i === galleryIndex ? 'active' : ''}" data-idx="${i}" src="${esc(src)}" alt="">`
+  ).join("");
+  thumbs.querySelectorAll(".gallery-thumb").forEach(t => {
+    t.addEventListener("click", () => { galleryIndex = Number(t.dataset.idx); renderGallery(); });
+  });
+}
+
+function moveGallery(step) {
+  if (galleryImages.length < 2) return;
+  galleryIndex = (galleryIndex + step + galleryImages.length) % galleryImages.length;
+  renderGallery();
 }
 
 function showDetailViewMode() {
   document.getElementById("detailViewMode").style.display = "block";
   document.getElementById("detailEditMode").style.display = "none";
+  renderGallery();
 }
 
 function showDetailEditMode() {
@@ -890,8 +991,10 @@ function showDetailEditMode() {
   if (!entry) return;
   document.getElementById("editError").style.display = "none";
   document.getElementById("editUrl").value = entry.url || "";
-  editThumbData = (entry.thumbnail && entry.thumbnail.startsWith("data:")) ? entry.thumbnail : null;
-  resetThumbUploaderUI({ urlInputId: "editThumb", previewId: "editThumbPreview", clearBtnId: "editThumbClear" }, entry.thumbnail || null);
+  editImages = [...getImages(entry)];
+  renderImageStrip("editImagesStrip", editImages);
+  document.getElementById("editImagesUrl").value = "";
+  document.getElementById("detailGallery").style.display = "none";
   document.getElementById("editNote").value = entry.note || "";
   renderCatSelect(document.getElementById("editCat"), entry.category);
   document.getElementById("editNewCat").value = "";
@@ -948,8 +1051,9 @@ document.getElementById("editForm").addEventListener("submit", (e) => {
     return;
   }
 
-  let thumbnail = editThumbData || document.getElementById("editThumb").value.trim();
-  if (thumbnail && !thumbnail.startsWith("data:") && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
+  // 入力欄に貼り付けたまま「追加」を押し忘れたURLも拾う
+  const pendingEditUrl = normalizeUrl(document.getElementById("editImagesUrl").value);
+  if (pendingEditUrl) editImages.push(pendingEditUrl);
 
   const note = document.getElementById("editNote").value.trim();
   const formCat = document.getElementById("editCat").value;
@@ -957,14 +1061,19 @@ document.getElementById("editForm").addEventListener("submit", (e) => {
   const finalCat = newCat || formCat;
 
   entry.url = url;
-  entry.thumbnail = thumbnail || null;
+  const prev = { images: entry.images, url: entry.url, note: entry.note, category: entry.category, username: entry.username };
+  entry.images = [...editImages];
+  delete entry.thumbnail;
   entry.note = note;
   entry.category = finalCat;
   entry.username = extractUsername(url);
 
   if (newCat && !categories.includes(newCat)) categories.push(newCat);
 
-  save();
+  if (!save()) {
+    Object.assign(entry, prev);
+    return;
+  }
   fillDetailView(entry);
   showDetailViewMode();
   renderAll();
@@ -992,8 +1101,8 @@ document.getElementById("entryForm").addEventListener("submit", (e) => {
   const formCat = document.getElementById("formCat").value;
   const newCat = document.getElementById("formNewCat").value.trim();
   const finalCat = newCat || formCat;
-  let thumbnail = formThumbData || document.getElementById("formThumb").value.trim();
-  if (thumbnail && !thumbnail.startsWith("data:") && !/^https?:\/\//i.test(thumbnail)) thumbnail = "https://" + thumbnail;
+  const pendingUrl = normalizeUrl(document.getElementById("formImagesUrl").value);
+  if (pendingUrl) formImages.push(pendingUrl);
 
   const entry = {
     id: `entry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -1001,14 +1110,20 @@ document.getElementById("entryForm").addEventListener("submit", (e) => {
     note,
     category: finalCat,
     username: extractUsername(url),
-    thumbnail: thumbnail || null,
+    images: [...formImages],
     createdAt: Date.now(),
   };
 
+  const prevEntries = entries;
+  const prevCategories = [...categories];
   entries = [entry, ...entries];
   if (newCat && !categories.includes(newCat)) categories.push(newCat);
 
-  save();
+  if (!save()) {
+    entries = prevEntries;
+    categories = prevCategories;
+    return;
+  }
   closeForm();
   renderAll();
 });
@@ -1038,19 +1153,21 @@ document.getElementById("listViewBtn").addEventListener("click", () => {
   renderMain();
 });
 
-setupThumbUploader({
-  fileInputId: "formThumbFile",
-  urlInputId: "formThumb",
-  previewId: "formThumbPreview",
-  clearBtnId: "formThumbClear",
-  getSet: { get: () => formThumbData, set: (v) => { formThumbData = v; } },
+setupImageUploader({
+  fileId: "formImagesFile", urlId: "formImagesUrl", urlAddId: "formImagesUrlAdd",
+  stripId: "formImagesStrip", getList: () => formImages,
 });
-setupThumbUploader({
-  fileInputId: "editThumbFile",
-  urlInputId: "editThumb",
-  previewId: "editThumbPreview",
-  clearBtnId: "editThumbClear",
-  getSet: { get: () => editThumbData, set: (v) => { editThumbData = v; } },
+setupImageUploader({
+  fileId: "editImagesFile", urlId: "editImagesUrl", urlAddId: "editImagesUrlAdd",
+  stripId: "editImagesStrip", getList: () => editImages,
+});
+document.getElementById("galleryPrev").addEventListener("click", () => moveGallery(-1));
+document.getElementById("galleryNext").addEventListener("click", () => moveGallery(1));
+document.addEventListener("keydown", (e) => {
+  if (!document.getElementById("detailOverlay").classList.contains("open")) return;
+  if (document.getElementById("detailEditMode").style.display === "block") return;
+  if (e.key === "ArrowLeft") moveGallery(-1);
+  if (e.key === "ArrowRight") moveGallery(1);
 });
 
 renderAll();
